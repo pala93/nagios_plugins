@@ -1,0 +1,87 @@
+#!/usr/local/bin/bash
+
+HOST=$1
+COMMUNITY=$2
+INTERFACES=$3
+UPDOWN=$4
+
+OID_status=".1.3.6.1.2.1.2.2.1.8.$3"
+OID_incoming_traffic=".1.3.6.1.2.1.31.1.1.1.6.$3"
+OID_outgoing_traffic=".1.3.6.1.2.1.31.1.1.1.10.$3"
+OID_description="1.3.6.1.2.1.31.1.1.1.18.$3"
+OID_in_errors=".1.3.6.1.2.1.2.2.1.14.$3"
+OID_out_errors=".1.3.6.1.2.1.2.2.1.20.$3"
+OID_aligment_errors=".1.3.6.1.2.1.10.7.2.1.2.$3"
+OID_carrier_error=".1.3.6.1.2.1.10.7.2.1.11.$3"
+OID_fcs_error=".1.3.6.1.2.1.10.7.2.1.3.$3"
+
+RES=0
+function my_snmp_get () {
+ RES=$(/usr/local/bin/snmpget -v2c -c$COMMUNITY $HOST $1 | /usr/bin/awk '{print $4}')
+}
+
+my_snmp_get $OID_status
+port_status=$RES
+
+my_snmp_get $OID_description
+port_description=$RES
+
+my_snmp_get $OID_in_errors
+error_in=$RES
+
+my_snmp_get $OID_out_errors
+error_out=$RES
+
+my_snmp_get $OID_aligment_errors
+aligment_error=$RES
+
+my_snmp_get $OID_carrier_error
+carrier_error=$RES
+
+my_snmp_get $OID_fcs_error
+fcs_error=$RES
+
+my_snmp_get $OID_incoming_traffic
+incoming_traf_FIRST=$RES
+
+my_snmp_get $OID_outgoing_traffic
+outgoing_traf_FIRST=$RES
+
+sleep 5
+
+my_snmp_get $OID_incoming_traffic
+incoming_traf_SECOND=$RES
+
+my_snmp_get $OID_outgoing_traffic
+outgoing_traf_SECOND=$RES
+
+let "Incomming_sec = $incoming_traf_SECOND - $incoming_traf_FIRST"
+let "Outgoing_sec = $outgoing_traf_SECOND - $outgoing_traf_FIRST"
+
+#count Gigabit / sec *******in your nagios must install calc in /usr/ports/....../calk
+In_Traffic=$(/usr/local/bin/calc $Incomming_sec / 1024 / 1024 / 1024  / 0.125 / 5 | /usr/bin/awk -F. '{print substr($1,3) "."  substr($2,1,2)}')
+Out_Traffic=$(/usr/local/bin/calc $Outgoing_sec / 1024 / 1024 / 1024 / 0.125 / 5 | /usr/bin/awk -F. '{print substr($1,3) "."  substr($2,1,2)}')
+sec=Gbit/s
+
+echo "$port_description,  Link = $port_status, Bandwith - RX: $In_Traffic $sec TX: $Out_Traffic $sec
+                         Error In = $error_in
+                         Error Out= $error_out
+                         Error Aligment = $aligment_error
+                         Error Carrier = $carrier_error
+                         Error FSC = $fcs_error | RX=$In_Traffic TX=$Out_Traffic"
+
+
+if [[ "$UPDOWN" == "cUP" && "$port_status" == "up(1)" ]]
+        then
+                exit 2
+
+elif [[ "$UPDOWN" == "cDOWN" && "$port_status" == "down(2)" ]]
+        then
+                exit 2
+
+fi
+
+exit 0
+
+##########you must intstall calc (pkg install calc) and config snmp server on ICX6610    
+######### FreeBSD 10.3

@@ -1,0 +1,21 @@
+#!/usr/local/bin/bash
+
+cmd=$(find /backup_directory -mtime -2 | grep -c tar.gz)
+cmd1=$(cd /backup_directory && ls -tr|tail -n1)
+cmd3=$(du /backup_directory/$cmd1 | cut -f1)
+
+
+        if [ $cmd -lt 1 ]
+                then
+                echo "Backup status - Problem DAY!!!"
+                exit 2
+        elif [ $cmd3 -lt 40  ]	###  (-lt 40) min size backup file
+                then
+                echo "Backup status - Problem SIZE!!!"
+                exit 2
+        else
+                echo "Backup status - OK"
+                exit 0
+        fi
+
+#########Freebsd -mtime -2 (interval 2 days)

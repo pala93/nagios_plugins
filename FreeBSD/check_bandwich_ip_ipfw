@@ -1,0 +1,34 @@
+#!/usr/local/bin/bash
+
+/sbin/ipfw add 11 count ip from any to 1.1.1.1 >/dev/null
+/sbin/ipfw add 12 count ip from 1.1.1.1 to any >/dev/null
+
+sleep 5
+
+inW=0
+outW=0
+
+inW=$(/sbin/ipfw show 11 | /usr/bin/awk '{print $3}')
+outW=$(/sbin/ipfw show 12 | /usr/bin/awk '{print $3}')
+
+inW_mgb_sec=$(/usr/local/bin/calc $inW / 1024 / 1024 / 1024 / 0.125 / 5 | /usr/bin/awk -F. '{print substr($1,3) "."  substr($2,1,2)}')
+outW_mgb_sec=$(/usr/local/bin/calc $outW / 1024 / 1024 / 1024 / 0.125 / 5 | /usr/bin/awk -F. '{print substr($1,3) "."  substr($2,1,2)}')
+
+/sbin/ipfw delete 11
+/sbin/ipfw delete 12
+
+if [[ "$inW" == 0 ]];
+then
+inW_mgb_sec=0.00
+fi
+
+if [[ "$outW" == 0 ]];
+then
+outW_mgb_sec=0.00
+fi
+
+echo "Bandwith OK - RX: $inW_mgb_sec Mbit/sec TX: $outW_mgb_sec Mbit/sec | RX=$inW_mgb_sec TX=$outW_mgb_sec"
+
+exit 0
+
+########You must install calc

@@ -1,0 +1,36 @@
+#!/usr/local/bin/bash
+
+OID_sec_5=".1.3.6.1.4.1.9.2.1.56.0" 
+OID_sec_60=".1.3.6.1.4.1.9.2.1.57.0"
+OID_min_5=".1.3.6.1.4.1.9.2.1.58.0"	   
+
+HOST=$1
+COMMUNITY=$2
+WARN=$3
+CRIT=$4
+
+RES=0
+function my_snmp_get () {
+ RES=$(/usr/local/bin/snmpget -v2c -c$COMMUNITY $HOST $1 | /usr/bin/awk '{print $4 }')
+}
+
+my_snmp_get $OID_sec_5
+sec_5=$RES
+my_snmp_get $OID_sec_60
+sec_60=$RES
+my_snmp_get $OID_min_5
+min_5=$RES
+
+echo "CPU OK - Average 5 sec = $sec_5 % Average 60 sec = $sec_60 % Average 5 min = $min_5 % | 5sec=$sec_5 60sec=$sec_60 5min=$min_5"
+if [[ "$sec_5" -gt "$CRIT" || "$sec_60" -gt "$CRIT" || "$min_5" -gt "$CRIT" ]]
+        then
+                exit 2
+elif [[ "$WARN" -lt "$sec_5" && "$sec_5" -lt "$CRIT" || "$WARN" -lt "$sec_60" && "$sec_60" -lt "$CRIT" || "$WARN" -lt "$min_5" && "$min_5" -lt "$CRIT" ]]
+        then
+                exit 1
+fi
+exit 0
+
+#### README
+#### You must accept snmp in your cisco device
+### FreeBSD

@@ -1,0 +1,29 @@
+#!/usr/local/bin/perl
+
+use strict;
+use warnings;
+use Net::SSH::Perl;
+
+my $host = '1.1.1.1';
+my $pass = 'pass';
+my $user = 'login';
+
+my $cmd0 = 'cat /usr/builtin/etc/ftpbackup.conf | grep Status | awk \'{print($3)}\' && cat /usr/builtin/etc/ftpbackup.conf | grep LastBackupTime |  awk \'{print($3)}\'';
+
+my $ssh = Net::SSH::Perl->new($host, protocol => '1,2', debug =>0);
+$ssh->login($user, $pass);
+my($stdout0, $stderr, $exit) = $ssh->cmd($cmd0);
+
+my @data_array = split (/\n/,$stdout0);
+
+my $date_now = `date +%s`;
+
+my $interval = $date_now - $data_array[1];
+
+if ($data_array[0] eq 'Finished' && $interval < 691200) {
+        { print "Backup status - OK"; exit(0); }
+                                                      }
+else {
+        { print "Backup problem! Read file - /usr/builtin/etc/ftpbackup.conf"; exit(2); }
+     }
+

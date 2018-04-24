@@ -1,0 +1,20 @@
+#!/bin/sh
+prx=`/usr/local/bin/sudo /usr/local/bin/vtysh -e 'sh ip bgp su' | grep $2 | /usr/bin/awk '{ print $10 }'`
+if [ $prx = 'Connect' ]
+then
+        echo "Critical - Connect"
+        exit 1
+elif [ $prx = 'Active' ]
+then
+        echo "Critical - Active"
+        exit 1
+elif [ $prx -lt $1 ]
+then
+        echo "CRITICAL - Prefixes $prx"
+        exit 1
+else
+        echo "OK - Prefixes $prx"
+        exit 0
+fi
+
+##FREEBSD QUAGGA BGP ROUTER

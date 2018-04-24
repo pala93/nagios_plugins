@@ -1,0 +1,15 @@
+#!/usr/local/bin/bash
+
+RES=0
+RES=$(graid status | /usr/bin/awk '/OPTIMAL|DEGRADED/ {print $2}')
+        if [ "$RES" == DEGRADED ]
+                then
+                echo "Raid FAIL - $RES"
+                exit 2
+        elif [ "$RES" == OPTIMAL ]
+                then
+                echo "Raid OK - $RES"
+                exit 0
+        fi
+
+

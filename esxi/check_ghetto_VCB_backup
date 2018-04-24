@@ -1,0 +1,28 @@
+#!/usr/local/bin/perl
+use strict;
+use warnings;
+use Net::SSH::Perl;
+
+my $host = '1.1.1.1'; # host esxi backup
+my $pass = 'pass';
+my $user = 'login';
+my $backup_directory = 'backups directory';
+my $days = 21; #days period
+my $copy = 3;  # backups counts
+
+my $cmd0 = "find $backup_directory -mtime -$days | grep -c ok";
+
+my $ssh = Net::SSH::Perl->new($host, protocol => '1,2', debug =>0);
+$ssh->login($user, $pass);
+my($stdout0, $stderr, $exit) = $ssh->cmd($cmd0);
+
+        if ($stdout0 < $copy) {
+
+        { print "Backup problem! read log file"; exit(2); }
+
+                          }
+        else {
+
+        { print "Backup status - OK"; exit(0); }
+
+             }
